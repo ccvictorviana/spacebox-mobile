@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/dashboardMI"
+        android:icon="@drawable/ic_home_black_24dp"
+        android:title="Dashboard" />
+    <item
+        android:id="@+id/notificationsMI"
+        android:icon="@drawable/ic_notifications_black_24dp"
+        android:title="Notificações" />
+    <item
+        android:id="@+id/userDataMI"
+        android:icon="@drawable/ic_account_box_black_24dp"
+        android:title="Meu Dados" />
+    <item
+        android:id="@+id/exitMI"
+        android:icon="@drawable/ic_exit_to_app_black_24dp"
+        android:title="Sair" />
+</menu>

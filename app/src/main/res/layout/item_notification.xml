@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:padding="10dp">
+
+    <ImageView
+        android:id="@+id/notificationTypeIV"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginTop="3dp"
+        android:src="@drawable/logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/notificationTitleTV"
+        android:layout_width="326dp"
+        android:layout_height="18dp"
+        android:layout_marginStart="6dp"
+        android:text="ABC"
+        android:textAlignment="viewStart"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@+id/notificationTypeIV"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/notificationLastModifiedDateTV"
+        android:layout_width="160dp"
+        android:layout_height="13dp"
+        android:layout_below="@+id/notificationTitleTV"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="2dp"
+        android:text="XYZ"
+        android:textSize="10sp"
+        app:layout_constraintStart_toEndOf="@+id/notificationTypeIV"
+        app:layout_constraintTop_toBottomOf="@+id/notificationTitleTV" />
+
+</android.support.constraint.ConstraintLayout>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:padding="10dp">
+
+    <ImageView
+        android:id="@+id/fileTypeIV"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginTop="3dp"
+        android:src="@drawable/if_logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/fileTitleTV"
+        android:layout_width="326dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="6dp"
+        android:text="jJ"
+        android:textAlignment="viewStart"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toEndOf="@+id/fileTypeIV"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/fileSizeTV"
+        android:layout_width="160dp"
+        android:layout_height="12dp"
+        android:layout_below="@+id/fileTitleTV"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="2dp"
+        android:text="28,2 KB"
+        android:textAlignment="textEnd"
+        android:textSize="10sp"
+        app:layout_constraintStart_toEndOf="@+id/fileLastModifiedDateTV"
+        app:layout_constraintTop_toBottomOf="@+id/fileTitleTV" />
+
+    <TextView
+        android:id="@+id/fileLastModifiedDateTV"
+        android:layout_width="160dp"
+        android:layout_height="12dp"
+        android:layout_below="@+id/fileTitleTV"
+        android:layout_marginStart="6dp"
+        android:layout_marginTop="2dp"
+        android:text="XYZ"
+        android:textSize="10sp"
+        app:layout_constraintStart_toEndOf="@+id/fileTypeIV"
+        app:layout_constraintTop_toBottomOf="@+id/fileTitleTV" />
+
+</android.support.constraint.ConstraintLayout>
