@@ -6,6 +6,7 @@ import android.widget.EditText;
 
 import br.com.spacebox.R;
 import br.com.spacebox.api.model.request.LoginRequest;
+import br.com.spacebox.ui.base.BaseActivity;
 
 public class LoginActivity extends BaseActivity {
     @Override
@@ -31,6 +32,7 @@ public class LoginActivity extends BaseActivity {
             callAPI((cli) -> cli.auth().detail(sessionManager.getFullToken()), (userData) -> {
                 sessionManager.setUser(userData);
                 startActivity(MasterActivity.class);
+                finish();
             });
         });
     }

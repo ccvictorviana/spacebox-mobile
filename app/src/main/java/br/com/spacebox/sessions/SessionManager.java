@@ -5,9 +5,12 @@ import android.content.SharedPreferences;
 
 import java.util.Date;
 
+import br.com.spacebox.api.model.request.UserRequest;
 import br.com.spacebox.api.model.response.UserResponse;
+import br.com.spacebox.utils.observer.IObservableEntity;
+import br.com.spacebox.utils.observer.Observer;
 
-public class SessionManager {
+public class SessionManager implements Observer<UserRequest> {
     SharedPreferences pref;
     SharedPreferences.Editor editor;
     private static SessionManager instance;
@@ -25,6 +28,13 @@ public class SessionManager {
         final int PRIVATE_MODE = 0;
         pref = context.getSharedPreferences(PREF_NAME, PRIVATE_MODE);
         editor = pref.edit();
+    }
+
+    @Override
+    public void update(UserRequest entity) {
+        setUserName(entity.getName());
+        setUserLogin(entity.getUsername());
+        setUserEmail(entity.getEmail());
     }
 
     public static SessionManager getInstance(Context context) {

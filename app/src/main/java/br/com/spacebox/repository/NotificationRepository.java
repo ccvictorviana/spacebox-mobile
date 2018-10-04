@@ -12,7 +12,6 @@ import br.com.spacebox.entity.User;
 
 @Dao
 public interface NotificationRepository {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     long insert(Notification notification);
 
@@ -21,5 +20,4 @@ public interface NotificationRepository {
 
     @Query("SELECT * FROM tb_notification")
     Notification[] list();
-
 }

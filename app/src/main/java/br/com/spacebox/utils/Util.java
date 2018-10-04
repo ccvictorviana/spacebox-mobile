@@ -97,6 +97,27 @@ public class Util {
             case 3:
                 result = R.drawable.if_delete;
                 break;
+            case 4:
+                result = R.drawable.if_psds;
+                break;
+            case 5:
+                result = R.drawable.if_pdfs;
+                break;
+            case 6:
+                result = R.drawable.if_tiffs;
+                break;
+            case 7:
+                result = R.drawable.if_mp4s;
+                break;
+            case 8:
+                result = R.drawable.if_movs;
+                break;
+            case 9:
+                result = R.drawable.if_gifs;
+                break;
+            case 10:
+                result = R.drawable.if_delete;
+                break;
         }
 
         return Integer.toString(result);

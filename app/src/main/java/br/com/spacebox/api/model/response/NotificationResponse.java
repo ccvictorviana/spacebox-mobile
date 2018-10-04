@@ -13,7 +13,9 @@ public class NotificationResponse {
 
     private Long nFileId;
 
-    private Long userId;
+    private Long userOwnerId;
+
+    private Long userActionId;
 
     private Date created;
 
@@ -51,12 +53,20 @@ public class NotificationResponse {
         this.nFileId = nFileId;
     }
 
-    public Long getUserId() {
-        return userId;
+    public Long getUserOwnerId() {
+        return userOwnerId;
     }
 
-    public void setUserId(Long userId) {
-        this.userId = userId;
+    public void setUserOwnerId(Long userOwnerId) {
+        this.userOwnerId = userOwnerId;
+    }
+
+    public Long getUserActionId() {
+        return userActionId;
+    }
+
+    public void setUserActionId(Long userActionId) {
+        this.userActionId = userActionId;
     }
 
     public Date getCreated() {

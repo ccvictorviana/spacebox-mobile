@@ -2,14 +2,12 @@ package br.com.spacebox.ui;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.EditText;
 
-import br.com.filepicker_manager.Constant;
 import br.com.spacebox.R;
 import br.com.spacebox.api.model.request.FileRequest;
+import br.com.spacebox.ui.base.BaseActivity;
 
 public class UploadFolderActivity extends BaseActivity {
     public static final String KEY_FILE_PARENT_ID = "KEY_FILE_PARENT_ID";

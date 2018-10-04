@@ -5,8 +5,8 @@ import com.google.gson.GsonBuilder;
 
 import java.util.Date;
 
-import br.com.spacebox.api.client.converters.DateDeserializer;
-import br.com.spacebox.api.config.ConfigClient;
+import br.com.spacebox.api.converters.DateDeserializer;
+import br.com.spacebox.constants.SpaceBoxConst;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -19,15 +19,13 @@ public class SpaceBoxClient {
 
     private SpaceBoxClient() {
         Retrofit.Builder retrofitBuilder = new Retrofit.Builder().addConverterFactory(gsonConverterFactory());
-        authClient = retrofitBuilder.baseUrl(ConfigClient.USER_API_CLIENT_BASE_URL).build().create(AuthClient.class);
-        fileClient = retrofitBuilder.baseUrl(ConfigClient.FILE_API_CLIENT_BASE_URL).build().create(FileClient.class);
+        authClient = retrofitBuilder.baseUrl(SpaceBoxConst.USER_API_CLIENT_BASE_URL).build().create(AuthClient.class);
+        fileClient = retrofitBuilder.baseUrl(SpaceBoxConst.FILE_API_CLIENT_BASE_URL).build().create(FileClient.class);
         retrofit = retrofitBuilder.build();
     }
 
     private GsonConverterFactory gsonConverterFactory() {
-        final Gson gson = new GsonBuilder()
-                .registerTypeAdapter(Date.class, new DateDeserializer())
-                .create();
+        final Gson gson = new GsonBuilder().registerTypeAdapter(Date.class, new DateDeserializer()).create();
         return GsonConverterFactory.create(gson);
     }
 

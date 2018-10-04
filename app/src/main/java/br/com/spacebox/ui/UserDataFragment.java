@@ -1,21 +1,28 @@
 package br.com.spacebox.ui;
 
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import br.com.spacebox.R;
-import br.com.spacebox.api.model.request.LoginRequest;
 import br.com.spacebox.api.model.request.UserRequest;
 import br.com.spacebox.api.model.response.UserResponse;
+import br.com.spacebox.ui.base.BaseFragment;
+import br.com.spacebox.utils.observer.Observer;
+import br.com.spacebox.utils.observer.Subject;
 
-public class UserDataFragment extends BaseFragment {
-    public static UserDataFragment newInstance() {
-        return new UserDataFragment();
+public class UserDataFragment extends BaseFragment implements Subject {
+    private List<Observer> observers;
+    private UserRequest request;
+
+    public UserDataFragment() {
+        observers = new ArrayList<>();
     }
 
     @Override
@@ -40,21 +47,39 @@ public class UserDataFragment extends BaseFragment {
         return view;
     }
 
-    public void onSaveBtn(View v) {
+    private void onSaveBtn(View v) {
         EditText name = getView().findViewById(R.id.nameText);
         EditText login = getView().findViewById(R.id.loginText);
         EditText email = getView().findViewById(R.id.emailText);
 
-        UserRequest request = new UserRequest();
-        request.setName(name.getText().toString());
-        request.setUsername(login.getText().toString());
-        request.setEmail(email.getText().toString());
+        UserRequest.Builder builder = new UserRequest.Builder();
+        builder.withName(name.getText().toString());
+        builder.withUserName(login.getText().toString());
+        builder.withEmail(email.getText().toString());
 
+        request = builder.build();
         callAPI((cli) -> cli.auth().update(sessionManager.getFullToken(), request), (response) -> {
-            sessionManager.setUserName(request.getName());
-            sessionManager.setUserLogin(request.getUsername());
-            sessionManager.setUserEmail(request.getEmail());
             toastMessage(R.string.successMessage);
+            notifyObservers();
         });
+    }
+
+    @Override
+    public void register(Observer observer) {
+        if (!observers.contains(observer)) {
+            observers.add(observer);
+        }
+    }
+
+    @Override
+    public void unregister(Observer observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers() {
+        for (final Observer observer : observers) {
+            observer.update(request);
+        }
     }
 }

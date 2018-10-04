@@ -15,7 +15,7 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".ui.LoginActivity"
+            android:name=".ui.SplashScreenActivity"
             android:label="SpaceBox">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,13 +26,15 @@
         <activity android:name=".ui.UploadFolderActivity" />
         <activity android:name=".ui.MasterActivity" />
         <activity android:name=".ui.RegisterActivity" />
+        <activity android:name=".ui.LoginActivity" />
         <activity android:name="br.com.filepicker_manager.ui.NormalFilePickActivity" />
         <activity android:name="br.com.filepicker_manager.ui.ImagePickActivity" />
         <activity android:name="br.com.filepicker_manager.ui.VideoPickActivity" />
         <activity android:name="br.com.filepicker_manager.ui.AudioPickActivity" />
         <activity android:name="br.com.filepicker_manager.ui.ImageBrowserActivity" />
 
-        <!--<service android:name="br.com.download_manager.DownloadManagerService" />-->
+        <!-- <service android:name="br.com.download_manager.DownloadManagerService" /> -->
+
     </application>
 
 </manifest>

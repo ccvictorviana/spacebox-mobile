@@ -4,10 +4,12 @@ import android.os.Bundle;
 import android.support.design.widget.BottomNavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
 
 import br.com.spacebox.R;
-import br.com.spacebox.ui.DashboardFragment;
+import br.com.spacebox.ui.base.BaseActivity;
+import br.com.spacebox.ui.utils.EFragmentType;
+import br.com.spacebox.ui.utils.FragmentFactory;
+import br.com.spacebox.utils.observer.Subject;
 
 public class MasterActivity extends BaseActivity {
 
@@ -19,7 +21,7 @@ public class MasterActivity extends BaseActivity {
     }
 
     private void addListenerNavigation() {
-        goToFragment(R.string.dashboardTitle, DashboardFragment.newInstance());
+        goToFragment(R.string.dashboardTitle, FragmentFactory.getFragment(EFragmentType.DASHBOARD_FRAGMENT));
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottomNavigationView);
         bottomNavigationView.setOnNavigationItemSelectedListener(item -> {
@@ -27,13 +29,15 @@ public class MasterActivity extends BaseActivity {
             if (!item.isChecked()) {
                 switch (item.getItemId()) {
                     case R.id.dashboardMI:
-                        goToFragment(R.string.dashboardTitle, DashboardFragment.newInstance());
-                        break;
-                    case R.id.userDataMI:
-                        goToFragment(R.string.userDataTitle, UserDataFragment.newInstance());
+                        goToFragment(R.string.dashboardTitle, FragmentFactory.getFragment(EFragmentType.DASHBOARD_FRAGMENT));
                         break;
                     case R.id.notificationsMI:
-                        goToFragment(R.string.notificationsTitle, NotificationFragment.newInstance());
+                        goToFragment(R.string.notificationsTitle, FragmentFactory.getFragment(EFragmentType.NOTIFICATION_FRAGMENT));
+                        break;
+                    case R.id.userDataMI:
+                        Fragment fragment = FragmentFactory.getFragment(EFragmentType.USERDATA_FRAGMENT);
+                        ((Subject) fragment).register(sessionManager);
+                        goToFragment(R.string.userDataTitle, fragment);
                         break;
                     case R.id.exitMI:
                         exit();
@@ -55,6 +59,7 @@ public class MasterActivity extends BaseActivity {
     private void exit() {
         callAPI((cli) -> cli.auth().logout(sessionManager.getFullToken()), (voids) -> {
             startActivity(LoginActivity.class);
+            finish();
         });
     }
 }

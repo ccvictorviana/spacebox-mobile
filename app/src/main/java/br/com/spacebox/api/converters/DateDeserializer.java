@@ -1,4 +1,4 @@
-package br.com.spacebox.api.client.converters;
+package br.com.spacebox.api.converters;
 
 
 import com.google.gson.JsonDeserializationContext;

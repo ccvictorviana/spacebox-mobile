@@ -1,14 +1,12 @@
 package br.com.spacebox.ui;
 
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import br.com.spacebox.R;
-import br.com.spacebox.api.model.request.LoginRequest;
 import br.com.spacebox.api.model.request.UserRequest;
+import br.com.spacebox.ui.base.BaseActivity;
 
 public class RegisterActivity extends BaseActivity {
     public static final String EXTRA_LOGIN = "EXTRA_LOGIN";
@@ -32,15 +30,17 @@ public class RegisterActivity extends BaseActivity {
         EditText email = findViewById(R.id.emailText);
         EditText password = findViewById(R.id.passwordText);
 
-        UserRequest request = new UserRequest();
-        request.setUsername(login.getText().toString());
-        request.setName(name.getText().toString());
-        request.setEmail(email.getText().toString());
-        request.setPassword(password.getText().toString());
+        UserRequest.Builder builder = new UserRequest.Builder();
+        UserRequest request =
+                builder.withName(name.getText().toString())
+                        .withUserName(login.getText().toString())
+                        .withPassword(password.getText().toString())
+                        .withEmail(email.getText().toString()).build();
 
         callAPI((cli) -> cli.auth().signup(request), (response) -> {
             toastMessage(R.string.userCreatedSuccess);
             startActivity(LoginActivity.class, EXTRA_LOGIN, request.getUsername());
+            finish();
         });
     }
 }

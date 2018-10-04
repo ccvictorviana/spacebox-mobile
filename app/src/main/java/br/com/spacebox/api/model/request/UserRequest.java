@@ -1,6 +1,8 @@
 package br.com.spacebox.api.model.request;
 
-public class UserRequest {
+import br.com.spacebox.utils.observer.IObservableEntity;
+
+public class UserRequest implements IObservableEntity {
 
     private String id;
     private String username;
@@ -46,5 +48,43 @@ public class UserRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public static class Builder {
+
+        private String username;
+        private String name;
+        private String email;
+        private String password;
+
+        public Builder withName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder withUserName(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder withEmail(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public Builder withPassword(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public UserRequest build() {
+            UserRequest request = new UserRequest();
+            request.setName(name);
+            request.setUsername(username);
+            request.setEmail(email);
+            request.setPassword(password);
+
+            return request;
+        }
     }
 }

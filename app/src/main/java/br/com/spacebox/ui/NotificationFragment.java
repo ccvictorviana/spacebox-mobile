@@ -16,21 +16,16 @@ import br.com.spacebox.R;
 import br.com.spacebox.api.model.request.NotificationFilterRequest;
 import br.com.spacebox.api.model.response.NotificationResponse;
 import br.com.spacebox.api.model.response.NotificationsResponse;
+import br.com.spacebox.ui.base.BaseFragment;
 import br.com.spacebox.utils.Util;
 
 public class NotificationFragment extends BaseFragment {
     private ListView myListView;
-    private List<Long> openedFolders;
     private View mContentView;
-
-    public static NotificationFragment newInstance() {
-        return new NotificationFragment();
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        openedFolders = new ArrayList<>();
         synchronize();
     }
 
@@ -42,13 +37,12 @@ public class NotificationFragment extends BaseFragment {
     }
 
     private void synchronize() {
-        NotificationFilterRequest request = new NotificationFilterRequest();
-        callAPI((cli) -> cli.file().notifications(sessionManager.getFullToken(), request), (response) -> {
-            myListView.setAdapter(createListData(response));
+        callAPI((cli) -> cli.file().notifications(sessionManager.getFullToken(), new NotificationFilterRequest()), (response) -> {
+            myListView.setAdapter(buildAdapter(response));
         });
     }
 
-    private SimpleAdapter createListData(NotificationsResponse response) {
+    private SimpleAdapter buildAdapter(NotificationsResponse response) {
         String TITLE_TAG = "TITLE_TAG";
         String DATE_TAG = "DATE_TAG";
         String ICON_TAG = "ICON_TAG";
@@ -58,7 +52,7 @@ public class NotificationFragment extends BaseFragment {
 
         if (response.getNotifications() != null && response.getNotifications().length > 0) {
             for (NotificationResponse file : response.getNotifications()) {
-                datum = new HashMap<>(2);
+                datum = new HashMap<>(3);
                 datum.put(TITLE_TAG, file.getnFileName());
                 datum.put(DATE_TAG, Util.formatToDate(file.getCreated()));
                 datum.put(ICON_TAG, Util.getNotificationTypeIcon(file.getType()));
@@ -66,8 +60,13 @@ public class NotificationFragment extends BaseFragment {
             }
         }
 
-        return new SimpleAdapter(getContext(), data, R.layout.item_notification,
+        return new SimpleAdapter(getContext(), data,
+                R.layout.item_notification,
                 new String[]{TITLE_TAG, DATE_TAG, ICON_TAG},
-                new int[]{R.id.notificationTitleTV, R.id.notificationLastModifiedDateTV, R.id.notificationTypeIV});
+                new int[]{
+                        R.id.notificationTitleTV,
+                        R.id.notificationLastModifiedDateTV,
+                        R.id.notificationTypeIV
+                });
     }
 }

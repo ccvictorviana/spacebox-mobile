@@ -10,7 +10,6 @@
         android:layout_width="30dp"
         android:layout_height="30dp"
         android:layout_marginTop="3dp"
-        android:src="@drawable/logo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

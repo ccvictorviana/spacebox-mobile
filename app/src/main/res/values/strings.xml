@@ -6,7 +6,6 @@
     <string name="http_error_500">Ocorreu um erro no servidor Spacebox !!</string>
     <string name="http_error_400">Requisição inválida !!</string>
     <string name="app_name">SpaceBox</string>
-    <string name="api_client_base_url">http://localhost:8531/</string>
     <string name="close">Fechar</string>
     <string name="open">Abrir</string>
     <string name="createAccount">Registrar-se</string>
@@ -16,4 +15,5 @@
     <string name="uploadTitle">Upload</string>
     <string name="dashboardTitle">Dashboard</string>
     <string name="successMessage">Operação reaizada com sucesso !</string>
+    <string name="internetNotAvailable">Favor conectar-se a internet !</string>
 </resources>

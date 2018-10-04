@@ -5,5 +5,5 @@ import retrofit2.Response;
 
 @FunctionalInterface
 public interface CallAPIPostProcessorError<TResponse> {
-    void execute(Call<TResponse> call, Response<TResponse> response);
+    void execute(Call<TResponse> call, Response<TResponse> response, Throwable throwable);
 }

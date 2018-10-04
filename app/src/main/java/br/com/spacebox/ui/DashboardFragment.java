@@ -12,6 +12,7 @@ import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +28,19 @@ import br.com.spacebox.api.model.request.FileRequest;
 import br.com.spacebox.api.model.response.FileSummaryResponse;
 import br.com.spacebox.api.model.response.FilesResponse;
 import br.com.filepicker_manager.Constant;
+import br.com.spacebox.ui.base.BaseFragment;
 import br.com.spacebox.utils.Util;
 
 import static android.app.Activity.RESULT_OK;
-import static br.com.filepicker_manager.ui.ImagePickActivity.IS_NEED_CAMERA;
 import static br.com.filepicker_manager.ui.ImagePickActivity.IS_NEED_IMAGE_PAGER;
 
 public class DashboardFragment extends BaseFragment {
+    private String TITLE_TAG = "TITLE_TAG";
+    private String SIZE_TAG = "SIZE_TAG";
+    private String DATE_TAG = "DATE_TAG";
+    private String ICON_TAG = "ICON_TAG";
+
+    boolean isMenuOpen = false;
     private ListView myListView;
     private List<Long> openedFolders;
     private View mContentView, dashboardManagerBGLayout;
@@ -42,11 +49,6 @@ public class DashboardFragment extends BaseFragment {
             uploadVideoBtn, uploadAudioBtn, uploadImageBtn, refreshFolderBtn;
     ConstraintLayout newFolderLayout, uploadFileLayout, refreshFolderLayout,
             uploadImageLayout, uploadVideoLayout, uploadAudioLayout;
-    boolean isFABOpen = false;
-
-    public static DashboardFragment newInstance() {
-        return new DashboardFragment();
-    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -77,34 +79,34 @@ public class DashboardFragment extends BaseFragment {
         uploadAudioBtn = mContentView.findViewById(R.id.uploadAudioBtn);
         refreshFolderBtn = mContentView.findViewById(R.id.refreshFolderBtn);
 
-        addListenerDashboardMenu();
+        addListenerMenu();
 
-        mContentView.setOnClickListener(view -> closeFABMenu());
+        mContentView.setOnClickListener(view -> closeMenu());
 
         return mContentView;
     }
 
-    private void addListenerDashboardMenu() {
+    private void addListenerMenu() {
         dashboardManagerBtn.setOnClickListener((view) -> {
-            if (!isFABOpen) {
-                showFABMenu();
+            if (!isMenuOpen) {
+                showMenu();
             } else {
-                closeFABMenu();
+                closeMenu();
             }
         });
 
-        dashboardManagerBGLayout.setOnClickListener(view -> closeFABMenu());
+        dashboardManagerBGLayout.setOnClickListener(view -> closeMenu());
 
         refreshFolderBtn.setOnClickListener((view) -> {
             synchronize(getLastFolderId());
-            closeFABMenu();
+            closeMenu();
         });
 
         newFolderBtn.setOnClickListener((view) -> {
             Intent intent = new Intent(getContext(), UploadFolderActivity.class);
             intent.putExtra(UploadFolderActivity.KEY_FILE_PARENT_ID, getLastFolderId());
             startActivityForResult(intent, 999);
-            closeFABMenu();
+            closeMenu();
         });
 
         uploadImageBtn.setOnClickListener((view) -> {
@@ -112,21 +114,21 @@ public class DashboardFragment extends BaseFragment {
             imagePickerIntent.putExtra(IS_NEED_IMAGE_PAGER, false);
             imagePickerIntent.putExtra(Constant.MAX_NUMBER, 5);
             startActivityForResult(imagePickerIntent, Constant.REQUEST_CODE_PICK_IMAGE);
-            closeFABMenu();
+            closeMenu();
         });
 
         uploadVideoBtn.setOnClickListener((view) -> {
             Intent intent2 = new Intent(getContext(), VideoPickActivity.class);
             intent2.putExtra(Constant.MAX_NUMBER, 5);
             startActivityForResult(intent2, Constant.REQUEST_CODE_PICK_VIDEO);
-            closeFABMenu();
+            closeMenu();
         });
 
         uploadAudioBtn.setOnClickListener((view) -> {
             Intent intent3 = new Intent(getContext(), AudioPickActivity.class);
             intent3.putExtra(Constant.MAX_NUMBER, 5);
             startActivityForResult(intent3, Constant.REQUEST_CODE_PICK_AUDIO);
-            closeFABMenu();
+            closeMenu();
         });
 
         uploadFileBtn.setOnClickListener((view) -> {
@@ -136,7 +138,7 @@ public class DashboardFragment extends BaseFragment {
                     ".xlsx", ".xls", ".doc", ".docX", ".ppt", ".pptx", ".pdf", ".html"
             });
             startActivityForResult(filePickerIntent, Constant.REQUEST_CODE_PICK_FILE);
-            closeFABMenu();
+            closeMenu();
         });
     }
 
@@ -180,8 +182,8 @@ public class DashboardFragment extends BaseFragment {
         }
     }
 
-    private void showFABMenu() {
-        isFABOpen = true;
+    private void showMenu() {
+        isMenuOpen = true;
         newFolderLayout.setVisibility(View.VISIBLE);
         uploadFileLayout.setVisibility(View.VISIBLE);
         uploadImageLayout.setVisibility(View.VISIBLE);
@@ -200,8 +202,8 @@ public class DashboardFragment extends BaseFragment {
         refreshFolderLayout.animate().translationY(-getResources().getDimension(R.dimen.standard_280));
     }
 
-    private void closeFABMenu() {
-        isFABOpen = false;
+    private void closeMenu() {
+        isMenuOpen = false;
         dashboardManagerBGLayout.setVisibility(View.GONE);
         dashboardManagerBtn.animate().rotationBy(-180);
         newFolderLayout.animate().translationY(0);
@@ -217,7 +219,7 @@ public class DashboardFragment extends BaseFragment {
 
             @Override
             public void onAnimationEnd(Animator animator) {
-                if (!isFABOpen) {
+                if (!isMenuOpen) {
                     newFolderLayout.setVisibility(View.GONE);
                     uploadFileLayout.setVisibility(View.GONE);
                     uploadImageLayout.setVisibility(View.GONE);
@@ -249,7 +251,7 @@ public class DashboardFragment extends BaseFragment {
     }
 
     private void refreshUI(FilesResponse response) {
-        myListView.setAdapter(createListData(response));
+        myListView.setAdapter(buildAdapter(response));
         myListView.setOnItemClickListener((adapter, view, position, id) -> {
             Long lastElement = getLastFolderId();
 
@@ -271,37 +273,34 @@ public class DashboardFragment extends BaseFragment {
         });
     }
 
-    private SimpleAdapter createListData(FilesResponse response) {
-        String TITLE_TAG = "TITLE_TAG";
-        String SIZE_TAG = "SIZE_TAG";
-        String DATE_TAG = "DATE_TAG";
-        String ICON_TAG = "ICON_TAG";
-
+    private SimpleAdapter buildAdapter(FilesResponse response) {
         List<Map<String, String>> data = new ArrayList<>();
-        Map<String, String> datum;
-        if (response.getFilter().getFileParentId() != null) {
-            datum = new HashMap<>(2);
-            datum.put(TITLE_TAG, "");
-            datum.put(SIZE_TAG, "");
-            datum.put(DATE_TAG, "......");
-            datum.put(ICON_TAG, Util.getFileTypeIcon(null));
-            data.add(datum);
-        }
+
+        if (response.getFilter().getFileParentId() != null)
+            data.add(createAdapterDataItemBackFolder());
 
         if (response.getFiles() != null && response.getFiles().length > 0) {
             for (FileSummaryResponse file : response.getFiles()) {
-                datum = new HashMap<>(2);
-                datum.put(TITLE_TAG, file.getName());
-                datum.put(SIZE_TAG, Util.formatToSize(file.getSize()));
-                datum.put(DATE_TAG, Util.formatToDate(file.getUpdated()));
-                datum.put(ICON_TAG, Util.getFileTypeIcon(file.getType()));
-                data.add(datum);
+                data.add(createAdapterDataItem(file.getName(), file.getSize(), file.getUpdated(), file.getType()));
             }
         }
 
         return new SimpleAdapter(getContext(), data, R.layout.item_dashboard,
                 new String[]{TITLE_TAG, SIZE_TAG, DATE_TAG, ICON_TAG},
                 new int[]{R.id.fileTitleTV, R.id.fileSizeTV, R.id.fileLastModifiedDateTV, R.id.fileTypeIV});
+    }
+
+    private Map<String, String> createAdapterDataItemBackFolder() {
+        return createAdapterDataItem(null, null, null, null);
+    }
+
+    private Map<String, String> createAdapterDataItem(String title, Long size, Date updatedDate, String type) {
+        Map<String, String> datum = new HashMap<>(4);
+        datum.put(TITLE_TAG, (title != null) ? title : "");
+        datum.put(SIZE_TAG, (size != null) ? Util.formatToSize(size) : "");
+        datum.put(DATE_TAG, (updatedDate != null) ? Util.formatToDate(updatedDate) : "......");
+        datum.put(ICON_TAG, Util.getFileTypeIcon(type));
+        return datum;
     }
 
     private Long getLastFolderId() {

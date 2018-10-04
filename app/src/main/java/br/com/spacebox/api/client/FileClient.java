@@ -17,7 +17,6 @@ import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 
 public interface FileClient {
-
     @POST("/files/")
     Call<FileSummaryResponse> create(@Header("Authorization") String token, @Body FileRequest request);
 
