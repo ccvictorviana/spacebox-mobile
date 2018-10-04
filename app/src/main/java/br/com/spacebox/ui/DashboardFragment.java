@@ -1,6 +1,8 @@
 package br.com.spacebox.ui;
 
 import android.animation.Animator;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
@@ -8,6 +10,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
@@ -251,7 +254,27 @@ public class DashboardFragment extends BaseFragment {
     }
 
     private void refreshUI(FilesResponse response) {
-        myListView.setAdapter(buildAdapter(response));
+        SimpleAdapter adapter = buildAdapter(response);
+        myListView.setAdapter(adapter);
+        addListenerListViewFiles(response);
+    }
+
+    private void addListenerListViewFiles(FilesResponse files) {
+        myListView.setOnItemLongClickListener((parent, view, position, arg3) -> {
+            Long lastElement = getLastFolderId();
+            if (lastElement == null || position > 0) {
+                FileSummaryResponse file = getSelectedFile(files, lastElement, position);
+                showDialogYesOrNo(R.string.questionContinueExclusion, (dialog, which) -> {
+                    dialog.dismiss();
+                    callAPI((cli) -> cli.file().delete(sessionManager.getFullToken(), file.getId()), (response) -> {
+                        synchronize(lastElement);
+                    }, true);
+                });
+            }
+
+            return true;
+        });
+
         myListView.setOnItemClickListener((adapter, view, position, id) -> {
             Long lastElement = getLastFolderId();
 
@@ -259,8 +282,7 @@ public class DashboardFragment extends BaseFragment {
                 openedFolders.remove(lastElement);
                 lastElement = getLastFolderId();
             } else {
-                int indexFile = (lastElement == null) ? position : position - 1;
-                FileSummaryResponse file = response.getFiles()[indexFile];
+                FileSummaryResponse file = getSelectedFile(files, lastElement, position);
                 if (file.getType() == null && !openedFolders.contains(file.getId())) {
                     lastElement = file.getId();
                     openedFolders.add(lastElement);
@@ -271,6 +293,11 @@ public class DashboardFragment extends BaseFragment {
 
             synchronize(lastElement);
         });
+    }
+
+    private FileSummaryResponse getSelectedFile(FilesResponse response, Long lastElement, int position) {
+        int indexFile = (lastElement == null) ? position : position - 1;
+        return response.getFiles()[indexFile];
     }
 
     private SimpleAdapter buildAdapter(FilesResponse response) {

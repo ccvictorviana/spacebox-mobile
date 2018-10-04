@@ -1,7 +1,9 @@
 package br.com.spacebox.ui.base;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.view.View;
 import android.view.Window;
@@ -37,7 +39,7 @@ public interface IBaseCommon {
 
     Context getCommonContext();
 
-    default <T> void callAPI(ProgressBar progressBar, CallAPI<T> callEndpoint, CallAPIPostProcessorSuccess<T> callAPISuccess, CallAPIPostProcessorError<T> callAPIError) {
+    default <T> void callAPI(ProgressBar progressBar, CallAPI<T> callEndpoint, CallAPIPostProcessorSuccess<T> callAPISuccess, CallAPIPostProcessorError<T> callAPIError, boolean disableHideLoading) {
         Call<T> call = callEndpoint.execute(SpaceBoxClient.getInstance());
 
         showLoading(progressBar);
@@ -60,7 +62,8 @@ public interface IBaseCommon {
                     }
                 }
 
-                hideLoading(progressBar);
+                if (!disableHideLoading)
+                    hideLoading(progressBar);
             }
 
             @Override
@@ -106,16 +109,20 @@ public interface IBaseCommon {
             pb.setVisibility(View.INVISIBLE);
     }
 
-    default <T> void callAPI(CallAPI<T> callEndpoint, CallAPIPostProcessorSuccess<T> callAPISuccessm) {
-        callAPI(callEndpoint, callAPISuccessm, null);
+    default <T> void callAPI(CallAPI<T> callEndpoint, CallAPIPostProcessorSuccess<T> callAPISuccess, boolean disableHideLoading) {
+        callAPI(null, callEndpoint, callAPISuccess, null, disableHideLoading);
+    }
+
+    default <T> void callAPI(CallAPI<T> callEndpoint, CallAPIPostProcessorSuccess<T> callAPISuccess) {
+        callAPI(callEndpoint, callAPISuccess, null);
     }
 
     default <T> void callAPI(ProgressBar progressBar, CallAPI<T> callEndpoint, CallAPIPostProcessorSuccess<T> callAPISuccessm) {
-        callAPI(progressBar, callEndpoint, callAPISuccessm, null);
+        callAPI(progressBar, callEndpoint, callAPISuccessm, null, false);
     }
 
     default <T> void callAPI(CallAPI<T> callEndpoint, CallAPIPostProcessorSuccess<T> callAPISuccessm, CallAPIPostProcessorError<T> callAPIError) {
-        callAPI(null, callEndpoint, callAPISuccessm, callAPIError);
+        callAPI(null, callEndpoint, callAPISuccessm, callAPIError, false);
     }
 
     default <TParams, TResult> void callTaskAsyncRecurrence(IExecuteInBackground<TParams, TResult> executeInBackground) {
@@ -129,5 +136,23 @@ public interface IBaseCommon {
 
     default <TParams, TResult> void callTaskAsync(IExecuteInBackground<TParams, TResult> executeInBackground, IExecuteInUIThread<TResult> executeInUIThread) {
         (new AsyncTaskCustom<TParams, TResult>()).execute(executeInBackground, executeInUIThread);
+    }
+
+    default void showDialogYesOrNo(int messageId, DialogInterface.OnClickListener dialogClickListenerYes, DialogInterface.OnClickListener dialogClickListenerNo) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getCommonContext());
+        builder.setTitle(R.string.warning);
+        builder.setMessage(getCommonContext().getResources().getString(messageId));
+
+        builder.setPositiveButton(R.string.yes, dialogClickListenerYes);
+        builder.setNegativeButton(R.string.no, dialogClickListenerNo);
+
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    default void showDialogYesOrNo(int messageId, DialogInterface.OnClickListener dialogClickListenerYes) {
+        showDialogYesOrNo(messageId, dialogClickListenerYes, (dialog, which) -> {
+            dialog.dismiss();
+        });
     }
 }

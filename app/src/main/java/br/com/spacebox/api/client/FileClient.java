@@ -15,13 +15,15 @@ import retrofit2.http.GET;
 import retrofit2.http.Header;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface FileClient {
     @POST("/files/")
     Call<FileSummaryResponse> create(@Header("Authorization") String token, @Body FileRequest request);
 
     @DELETE(value = "/files/")
-    Call<Void> delete(@Header("Authorization") String token, Long fileId);
+    Call<Void> delete(@Header("Authorization") String token, @Query("fileId") Long fileId);
 
     @PATCH(value = "/files/")
     Call<Void> update(@Header("Authorization") String token, @Body FileRequest request);
@@ -33,7 +35,7 @@ public interface FileClient {
     Call<FilesResponse> list(@Header("Authorization") String token, @Body FileFilterRequest request);
 
     @GET(value = "/files/download")
-    Call<ResponseBody> download(@Header("Authorization") String token, Long fileId);
+    Call<ResponseBody> download(@Header("Authorization") String token, @Query("fileId") Long fileId);
 
     @POST(value = "/notifications/")
     Call<NotificationsResponse> notifications(@Header("Authorization") String token, @Body NotificationFilterRequest request);
