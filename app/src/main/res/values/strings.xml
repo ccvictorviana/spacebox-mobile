@@ -9,7 +9,7 @@
     <string name="yes">Sim</string>
     <string name="no">Não</string>
     <string name="warning">Aviso</string>
-    <string name="questionContinueExclusion">Deseja proesseguir e deletar esse registro?</string>
+    <string name="questionContinueExclusion">Deseja prosseguir e deletar este registro?</string>
     <string name="app_name">SpaceBox</string>
     <string name="close">Fechar</string>
     <string name="open">Abrir</string>
