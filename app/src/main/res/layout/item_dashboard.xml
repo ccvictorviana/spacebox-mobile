@@ -41,7 +41,7 @@
 
     <TextView
         android:id="@+id/fileLastModifiedDateTV"
-        android:layout_width="160dp"
+        android:layout_width="139dp"
         android:layout_height="12dp"
         android:layout_below="@+id/fileTitleTV"
         android:layout_marginStart="6dp"
