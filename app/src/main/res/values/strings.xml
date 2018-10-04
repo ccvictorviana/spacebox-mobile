@@ -21,4 +21,13 @@
     <string name="dashboardTitle">Dashboard</string>
     <string name="successMessage">Operação reaizada com sucesso !</string>
     <string name="internetNotAvailable">Favor conectar-se a internet !</string>
+    <string name="password">Senha</string>
+    <string name="login">Login</string>
+    <string name="signin">Logar</string>
+    <string name="name">Nome</string>
+    <string name="email">E-mail</string>
+    <string name="register">Cadastrar</string>
+    <string name="loading">Carregando ...</string>
+    <string name="createFolder">Criar Pasta</string>
+    <string name="save">Salvar</string>
 </resources>

@@ -15,6 +15,7 @@
         android:divider="@color/list_divider"
         android:dividerHeight="1dp"
         android:listSelector="@drawable/list_row_selector" />
+
     <include layout="@layout/fragment_dashboard_menu" />
 
 </RelativeLayout>
