@@ -25,6 +25,7 @@ public class ErrorUtils {
         } catch (IOException e) {
         }
 
+        error.setCode(response.code());
         if (!response.isSuccessful() && error.getError() == null)
             error.addError(getMessageByHttpCode(response, resource));
 
@@ -48,6 +49,9 @@ public class ErrorUtils {
                 break;
             case HttpURLConnection.HTTP_BAD_REQUEST:
                 rId = R.string.http_error_400;
+                break;
+            case HttpURLConnection.HTTP_UNAUTHORIZED:
+                rId = R.string.http_error_401;
                 break;
             default:
                 rId = R.string.http_error_unexpected;

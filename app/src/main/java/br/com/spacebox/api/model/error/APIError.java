@@ -1,9 +1,11 @@
 package br.com.spacebox.api.model.error;
 
+import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 
 public class APIError {
+    private int code;
     private List<String> errors;
 
     public String getError() {
@@ -13,6 +15,14 @@ public class APIError {
     public void addError(String error) {
         errors = new ArrayList<>();
         errors.add(error);
+    }
+
+    public int getCode() {
+        return code;
+    }
+
+    public void setCode(int code) {
+        this.code = code;
     }
 
     public List<String> getErrors() {

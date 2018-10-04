@@ -2,6 +2,7 @@ package br.com.spacebox.ui.base;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -9,6 +10,7 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
@@ -19,6 +21,7 @@ import br.com.spacebox.api.interfaces.CallAPIPostProcessorError;
 import br.com.spacebox.api.interfaces.CallAPIPostProcessorSuccess;
 import br.com.spacebox.api.model.error.APIError;
 import br.com.spacebox.constants.SpaceBoxConst;
+import br.com.spacebox.ui.LoginActivity;
 import br.com.spacebox.utils.AsyncTaskCustom;
 import br.com.spacebox.utils.AsyncTaskRecurrence;
 import br.com.spacebox.utils.ErrorUtils;
@@ -46,8 +49,15 @@ public interface IBaseCommon {
                 } else {
                     APIError error = ErrorUtils.parseError(response, getCommonContext().getResources());
                     Toast.makeText(getCommonContext(), error.getError(), Toast.LENGTH_SHORT).show();
+
                     if (callAPIError != null)
                         callAPIError.execute(call, response, null);
+
+                    if (error.getCode() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+                        Intent myIntent = new Intent(getCommonContext(), LoginActivity.class);
+                        getCommonContext().startActivity(myIntent);
+                        getCommonActivity().finish();
+                    }
                 }
 
                 hideLoading(progressBar);
