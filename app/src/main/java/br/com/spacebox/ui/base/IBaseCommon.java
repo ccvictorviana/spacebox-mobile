@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 
 import br.com.spacebox.R;
 import br.com.spacebox.api.client.SpaceBoxClient;
@@ -56,7 +57,7 @@ public interface IBaseCommon {
             public void onFailure(Call<T> call, Throwable throwable) {
                 if (throwable instanceof SocketTimeoutException)
                     Toast.makeText(getCommonContext(), R.string.http_error_503, Toast.LENGTH_SHORT).show();
-                else if (throwable instanceof ConnectException)
+                else if ((throwable instanceof ConnectException) || (throwable instanceof UnknownHostException))
                     Toast.makeText(getCommonContext(), R.string.internetNotAvailable, Toast.LENGTH_SHORT).show();
 
                 if (callAPIError != null)
