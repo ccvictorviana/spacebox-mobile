@@ -2,24 +2,39 @@ package br.com.spacebox.ui;
 
 import android.animation.Animator;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.MimeTypeMap;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
+import android.widget.Toast;
 
+import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import br.com.download_manager.DownloadManager;
 import br.com.filepicker_manager.filter.entity.BaseFile;
 import br.com.filepicker_manager.ui.AudioPickActivity;
 import br.com.filepicker_manager.ui.ImagePickActivity;
@@ -31,6 +46,7 @@ import br.com.spacebox.api.model.request.FileRequest;
 import br.com.spacebox.api.model.response.FileSummaryResponse;
 import br.com.spacebox.api.model.response.FilesResponse;
 import br.com.filepicker_manager.Constant;
+import br.com.spacebox.constants.SpaceBoxConst;
 import br.com.spacebox.ui.base.BaseFragment;
 import br.com.spacebox.utils.Util;
 
@@ -42,9 +58,11 @@ public class DashboardFragment extends BaseFragment {
     private String SIZE_TAG = "SIZE_TAG";
     private String DATE_TAG = "DATE_TAG";
     private String ICON_TAG = "ICON_TAG";
+    private String IS_DOWNLOADED_TAG = "IS_DOWNLOADED_TAG";
 
     boolean isMenuOpen = false;
     private ListView myListView;
+    private List<FileSummaryResponse> myListViewData;
     private List<Long> openedFolders;
     private View mContentView, dashboardManagerBGLayout;
 
@@ -169,10 +187,12 @@ public class DashboardFragment extends BaseFragment {
     private <T extends BaseFile> void startUpload(ArrayList<T> parcelableArrayListExtra) {
         if (parcelableArrayListExtra != null && parcelableArrayListExtra.size() > 0) {
             showLoading();
+            String path = null;
             for (BaseFile parc : parcelableArrayListExtra) {
                 FileRequest request = new FileRequest();
+                path = parc.getPath();
                 request.setFileParentId(getLastFolderId());
-                request.setName(parc.getName());
+                request.setName(path.substring(path.lastIndexOf("/") + 1));
                 request.setType(parc.getMimeType());
                 request.setSize(parc.getSize());
                 request.setContent(Util.encodeFileToBase64Binary(parc.getPath()));
@@ -254,6 +274,7 @@ public class DashboardFragment extends BaseFragment {
     }
 
     private void refreshUI(FilesResponse response) {
+        this.myListViewData = Arrays.asList(response.getFiles());
         SimpleAdapter adapter = buildAdapter(response);
         myListView.setAdapter(adapter);
         addListenerListViewFiles(response);
@@ -281,17 +302,17 @@ public class DashboardFragment extends BaseFragment {
             if (position == 0 && openedFolders.size() > 0) {
                 openedFolders.remove(lastElement);
                 lastElement = getLastFolderId();
+                synchronize(lastElement);
             } else {
                 FileSummaryResponse file = getSelectedFile(files, lastElement, position);
                 if (file.getType() == null && !openedFolders.contains(file.getId())) {
                     lastElement = file.getId();
                     openedFolders.add(lastElement);
+                    synchronize(lastElement);
                 } else {
-                    download(file);
+                    download(file, view);
                 }
             }
-
-            synchronize(lastElement);
         });
     }
 
@@ -313,8 +334,8 @@ public class DashboardFragment extends BaseFragment {
         }
 
         return new SimpleAdapter(getContext(), data, R.layout.item_dashboard,
-                new String[]{TITLE_TAG, SIZE_TAG, DATE_TAG, ICON_TAG},
-                new int[]{R.id.fileTitleTV, R.id.fileSizeTV, R.id.fileLastModifiedDateTV, R.id.fileTypeIV});
+                new String[]{TITLE_TAG, SIZE_TAG, DATE_TAG, ICON_TAG, IS_DOWNLOADED_TAG},
+                new int[]{R.id.fileTitleTV, R.id.fileSizeTV, R.id.fileLastModifiedDateTV, R.id.fileTypeIV, R.id.downloadedIV});
     }
 
     private Map<String, String> createAdapterDataItemBackFolder() {
@@ -322,11 +343,18 @@ public class DashboardFragment extends BaseFragment {
     }
 
     private Map<String, String> createAdapterDataItem(String title, Long size, Date updatedDate, String type) {
-        Map<String, String> datum = new HashMap<>(4);
+        Map<String, String> datum = new HashMap<>(5);
         datum.put(TITLE_TAG, (title != null) ? title : "");
         datum.put(SIZE_TAG, (size != null) ? Util.formatToSize(size) : "");
         datum.put(DATE_TAG, (updatedDate != null) ? Util.formatToDate(updatedDate) : "......");
         datum.put(ICON_TAG, Util.getFileTypeIcon(type));
+
+        boolean isDownloaded = false;
+        if (title != null) {
+            isDownloaded = DownloadManager.getInstance().isCached(getContext(), title, updatedDate);
+        }
+
+        datum.put(IS_DOWNLOADED_TAG, isDownloaded ? Integer.toString(R.drawable.downloaded) : "");
         return datum;
     }
 
@@ -335,18 +363,95 @@ public class DashboardFragment extends BaseFragment {
         return (index >= 0) ? openedFolders.get(openedFolders.size() - 1) : null;
     }
 
-    private void download(FileSummaryResponse file) {
+    private void openFile(DownloadManager.Request request, Uri fileUri) {
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_VIEW);
+        shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        shareIntent.setDataAndType(fileUri, request.getMimeType());
+        startActivity(shareIntent);
+
+//        MimeTypeMap myMime = MimeTypeMap.getSingleton();
+//        Intent newIntent = new Intent(Intent.ACTION_VIEW);
+////        String mimeType = myMime.getMimeTypeFromExtension(fileExt(getFile()).substring(1));
+//        newIntent.setDataAndType(, request.getMimeType());
+//        newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+//        try {
+//            getContext().startActivity(newIntent);
+//        } catch (ActivityNotFoundException e) {
+//            Toast.makeText(getContext(), "No handler for this type of file.", Toast.LENGTH_LONG).show();
+//        }
+    }
+
+    private void download(FileSummaryResponse file, View view) {
+        Handler onBeforeDownload = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                ProgressBar progress = view.findViewById(R.id.progressBarDownload);
+                progress.setVisibility(View.VISIBLE);
+                progress.setProgress(0);
+            }
+        };
+
+        Handler onProgressDownload = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                Bundle bb = msg.getData();
+                ProgressBar progress = view.findViewById(R.id.progressBarDownload);
+                progress.setProgress(bb.getInt("progress"));
+            }
+        };
+
+        Handler onCachedDownload = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                Bundle bb = msg.getData();
+                openFile((DownloadManager.Request) bb.getSerializable("request"), (Uri) msg.obj);
+            }
+        };
+
+        Handler onCompleteDownload = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message msg) {
+                Bundle bb = msg.getData();
+                DownloadManager.Request request = (DownloadManager.Request) bb.getSerializable("request");
+                ProgressBar progress = view.findViewById(R.id.progressBarDownload);
+                progress.setVisibility(View.GONE);
+                progress.setProgress(0);
+                ImageView imageView = view.findViewById(R.id.downloadedIV);
+                imageView.setImageResource(R.drawable.downloaded);
+            }
+        };
+
 //        DownloadManager.Request request = DownloadManager.Request.Builder.create()
-//                .withUri("")
-//                .withId(file.getId() + "_" + file.getUpdated().getTime())
-//                .withFileName(file.getName())
+//                .withUri(SpaceBoxConst.FILE_API_CLIENT_BASE_URL_DOWNLOAD + file.getId())
 //                .withAuthorization(sessionManager.getFullToken())
-//                .withTitle("Zip package")
-//                .withDescription("A zip package with some files")
+//                .withEnableNotification(true)
+//                .withUpdateDate(file.getUpdated())
+//                .withFileName(file.getName())
+//                .withContext(getContext())
+//
+//                .withOnCachedDownload(onCachedDownload)
+//                .withOnBeforeDownload(onBeforeDownload)
+//                .withOnProgressDownload(onProgressDownload)
+//                .withOnCompleteDownload(onCompleteDownload)
 //                .build();
 //
-//        // get download service and enqueue file
-//        DownloadManager manager = (DownloadManager) getContext().getSystemService(Context.DOWNLOAD_SERVICE);
-//        manager.enqueue(request);
+//        DownloadManager.getInstance().enqueue(request);
+
+
+        DownloadManager.Request request = DownloadManager.Request.Builder.create()
+                .withUri("https://blog.kitei.com.br/wp-content/uploads/2018/07/215241-limpar-o-nome-online-como-escolher-o-melhor-site-para-isso.jpg")
+                .withFileName(file.getName())
+                .withContext(getContext())
+
+                .withOnCachedDownload(onCachedDownload)
+                .withOnBeforeDownload(onBeforeDownload)
+                .withOnProgressDownload(onProgressDownload)
+                .withOnCompleteDownload(onCompleteDownload)
+                .build();
+
+        DownloadManager.getInstance().enqueue(request);
+
+
     }
 }
