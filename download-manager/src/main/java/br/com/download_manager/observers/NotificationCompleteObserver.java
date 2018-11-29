@@ -21,7 +21,7 @@ public class NotificationCompleteObserver extends NotificationObserver {
             shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             shareIntent.setDataAndType(message.getFile(), message.getMimeType());
 
-            PendingIntent contentIntent = PendingIntent.getActivity(message.getContext(),
+            PendingIntent contentIntent = PendingIntent.getActivity(context,
                     0, shareIntent, PendingIntent.FLAG_CANCEL_CURRENT);
 
             builder.setContentIntent(contentIntent);
