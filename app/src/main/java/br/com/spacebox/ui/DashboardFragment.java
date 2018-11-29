@@ -35,6 +35,7 @@ import br.com.spacebox.api.model.request.FileFilterRequest;
 import br.com.spacebox.api.model.request.FileRequest;
 import br.com.spacebox.api.model.response.FileSummaryResponse;
 import br.com.spacebox.api.model.response.FilesResponse;
+import br.com.spacebox.constants.SpaceBoxConst;
 import br.com.spacebox.ui.base.BaseFragment;
 import br.com.spacebox.utils.Util;
 
@@ -383,28 +384,13 @@ public class DashboardFragment extends BaseFragment {
                 openFile(message);
         };
 
-//        DownloadManager.Request request = DownloadManager.Request.Builder.create()
-//                .withUri(SpaceBoxConst.FILE_API_CLIENT_BASE_URL_DOWNLOAD + file.getId())
-//                .withAuthorization(sessionManager.getFullToken())
-//                .withEnableNotification(true)
-//                .withUpdateDate(file.getUpdated())
-//                .withFileName(file.getName())
-//                .withContext(getContext())
-//
-//                .withOnCachedDownload(onCachedDownload)
-//                .withOnBeforeDownload(onBeforeDownload)
-//                .withOnProgressDownload(onProgressDownload)
-//                .withOnCompleteDownload(onCompleteDownload)
-//                .build();
-//
-//        DownloadManager.getInstance().enqueue(request);
-
-
         DownloadManagerRequest request = DownloadManagerRequest.Builder.create()
-                .withUri("https://blog.kitei.com.br/wp-content/uploads/2018/07/215241-limpar-o-nome-online-como-escolher-o-melhor-site-para-isso.jpg")
+                .withUri(SpaceBoxConst.FILE_API_CLIENT_BASE_URL_DOWNLOAD + file.getId())
+                .withAuthorization(sessionManager.getFullToken())
+                .withEnableNotification(true)
+                .withUpdateDate(file.getUpdated())
                 .withFileName(file.getName())
                 .withContext(getContext())
-                .withEnableNotification(true)
 
                 .withOnBeforeDownload(onBeforeDownload)
                 .withOnProgressDownload(onProgressDownload)
@@ -412,5 +398,19 @@ public class DashboardFragment extends BaseFragment {
                 .build();
 
         DownloadManager.getInstance().enqueue(request);
+
+
+//        DownloadManagerRequest request = DownloadManagerRequest.Builder.create()
+//                .withUri("https://blog.kitei.com.br/wp-content/uploads/2018/07/215241-limpar-o-nome-online-como-escolher-o-melhor-site-para-isso.jpg")
+//                .withFileName(file.getName())
+//                .withContext(getContext())
+//                .withEnableNotification(true)
+//
+//                .withOnBeforeDownload(onBeforeDownload)
+//                .withOnProgressDownload(onProgressDownload)
+//                .withOnCompleteDownload(onCompleteDownload)
+//                .build();
+//
+//        DownloadManager.getInstance().enqueue(request);
     }
 }
