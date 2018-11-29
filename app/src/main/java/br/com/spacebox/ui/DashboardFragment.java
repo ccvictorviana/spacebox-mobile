@@ -1,40 +1,29 @@
 package br.com.spacebox.ui;
 
 import android.animation.Animator;
-import android.app.AlertDialog;
-import android.content.ActivityNotFoundException;
-import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.MimeTypeMap;
-import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.SimpleAdapter;
-import android.widget.Toast;
 
-import java.io.File;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import br.com.download_manager.DownloadManager;
+import br.com.download_manager.interfaces.IDownloadManagerAction;
+import br.com.download_manager.model.DownloadManagerRequest;
+import br.com.download_manager.model.DownloadManagerMessage;
 import br.com.filepicker_manager.filter.entity.BaseFile;
 import br.com.filepicker_manager.ui.AudioPickActivity;
 import br.com.filepicker_manager.ui.ImagePickActivity;
@@ -46,7 +35,6 @@ import br.com.spacebox.api.model.request.FileRequest;
 import br.com.spacebox.api.model.response.FileSummaryResponse;
 import br.com.spacebox.api.model.response.FilesResponse;
 import br.com.filepicker_manager.Constant;
-import br.com.spacebox.constants.SpaceBoxConst;
 import br.com.spacebox.ui.base.BaseFragment;
 import br.com.spacebox.utils.Util;
 
@@ -363,11 +351,11 @@ public class DashboardFragment extends BaseFragment {
         return (index >= 0) ? openedFolders.get(openedFolders.size() - 1) : null;
     }
 
-    private void openFile(DownloadManager.Request request, Uri fileUri) {
+    private void openFile(DownloadManagerMessage response) {
         Intent shareIntent = new Intent();
         shareIntent.setAction(Intent.ACTION_VIEW);
         shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        shareIntent.setDataAndType(fileUri, request.getMimeType());
+        shareIntent.setDataAndType(response.getFile(), response.getMimeType());
         startActivity(shareIntent);
 
 //        MimeTypeMap myMime = MimeTypeMap.getSingleton();
@@ -383,43 +371,24 @@ public class DashboardFragment extends BaseFragment {
     }
 
     private void download(FileSummaryResponse file, View view) {
-        Handler onBeforeDownload = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(Message msg) {
-                ProgressBar progress = view.findViewById(R.id.progressBarDownload);
-                progress.setVisibility(View.VISIBLE);
-                progress.setProgress(0);
-            }
+        IDownloadManagerAction onBeforeDownload = (response) -> {
+            ProgressBar progress = view.findViewById(R.id.progressBarDownload);
+            progress.setVisibility(View.VISIBLE);
+            progress.setProgress(0);
         };
 
-        Handler onProgressDownload = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(Message msg) {
-                Bundle bb = msg.getData();
-                ProgressBar progress = view.findViewById(R.id.progressBarDownload);
-                progress.setProgress(bb.getInt("progress"));
-            }
+        IDownloadManagerAction onProgressDownload = (response) -> {
+            ProgressBar progress = view.findViewById(R.id.progressBarDownload);
+            progress.setProgress(response.getProgress());
         };
 
-        Handler onCachedDownload = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(Message msg) {
-                Bundle bb = msg.getData();
-                openFile((DownloadManager.Request) bb.getSerializable("request"), (Uri) msg.obj);
-            }
-        };
+        IDownloadManagerAction onCompleteDownload = (response) -> {
+            ProgressBar progress = view.findViewById(R.id.progressBarDownload);
+            progress.setVisibility(View.GONE);
+            progress.setProgress(0);
 
-        Handler onCompleteDownload = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(Message msg) {
-                Bundle bb = msg.getData();
-                DownloadManager.Request request = (DownloadManager.Request) bb.getSerializable("request");
-                ProgressBar progress = view.findViewById(R.id.progressBarDownload);
-                progress.setVisibility(View.GONE);
-                progress.setProgress(0);
-                ImageView imageView = view.findViewById(R.id.downloadedIV);
-                imageView.setImageResource(R.drawable.downloaded);
-            }
+            ImageView imageView = view.findViewById(R.id.downloadedIV);
+            imageView.setImageResource(R.drawable.downloaded);
         };
 
 //        DownloadManager.Request request = DownloadManager.Request.Builder.create()
@@ -439,19 +408,17 @@ public class DashboardFragment extends BaseFragment {
 //        DownloadManager.getInstance().enqueue(request);
 
 
-        DownloadManager.Request request = DownloadManager.Request.Builder.create()
+        DownloadManagerRequest request = DownloadManagerRequest.Builder.create()
                 .withUri("https://blog.kitei.com.br/wp-content/uploads/2018/07/215241-limpar-o-nome-online-como-escolher-o-melhor-site-para-isso.jpg")
                 .withFileName(file.getName())
                 .withContext(getContext())
+                .withEnableNotification(true)
 
-                .withOnCachedDownload(onCachedDownload)
                 .withOnBeforeDownload(onBeforeDownload)
                 .withOnProgressDownload(onProgressDownload)
                 .withOnCompleteDownload(onCompleteDownload)
                 .build();
 
         DownloadManager.getInstance().enqueue(request);
-
-
     }
 }

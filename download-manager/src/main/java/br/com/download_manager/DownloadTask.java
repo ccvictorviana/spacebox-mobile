@@ -7,38 +7,35 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
-import android.util.Log;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import br.com.download_manager.interfaces.IDownloadTask;
+import br.com.download_manager.model.DownloadManagerRequest;
+import br.com.download_manager.model.DownloadManagerMessage;
+import br.com.download_manager.utils.ResourceMessages;
+import br.com.download_manager.utils.Utils;
 import okhttp3.Call;
-import okhttp3.Headers;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
-public class DownloadTask implements Runnable {
-    private final static AtomicInteger c = new AtomicInteger(0);
-    private Handler handler;
+public class DownloadTask implements IDownloadTask {
     private int notificationId;
+    private DownloadManagerRequest mRequest;
+    private NotificationCompat.Builder builder;
     private NotificationManager notificationManager;
-    private DownloadManager.Request mRequest;
+    private final static AtomicInteger c = new AtomicInteger(0);
 
-    public DownloadTask(DownloadManager.Request request) {
-        this.mRequest = request;
+    public DownloadTask(DownloadManagerRequest request) {
+        mRequest = request;
         notificationId = c.incrementAndGet();
         notificationManager = (NotificationManager) request.getContext().getSystemService(Context.NOTIFICATION_SERVICE);
     }
@@ -46,13 +43,72 @@ public class DownloadTask implements Runnable {
     @Override
     public void run() {
         try {
-            if (mRequest.getEnableNotification()){
-                createPushNotification();
-            }
-            downloadFile();
+            Uri fileUri = DownloadManager.getInstance().getFileUriCached(mRequest);
+
+            if (fileUri == null)
+                downloadFile();
+            else if (mRequest.getOnCompleteDownload() != null)
+                notifyDownloadComplete(fileUri, true);
 
         } finally {
             DownloadManager.getInstance().endedThread();
+        }
+    }
+
+    public void downloadFile() {
+        showInitialNotification();
+
+        boolean isDownloaded = false;
+        Request request = buildRequest();
+        OkHttpClient client = new OkHttpClient();
+
+        Call call = client.newCall(request);
+
+        try {
+            Response response = call.execute();
+            if (response.code() == 200 || response.code() == 201) {
+
+                File mediaFile = createFile();
+                InputStream inputStream = null;
+
+                try {
+                    inputStream = response.body().byteStream();
+                    OutputStream output = new FileOutputStream(mediaFile);
+
+                    showDownloadStartNotification();
+
+                    if (mRequest.getOnBeforeDownload() != null) {
+                        DownloadManagerMessage message = new DownloadManagerMessage();
+                        message.setProgress(0);
+                        Utils.executeAction(message, mRequest.getOnBeforeDownload());
+                    }
+
+                    isDownloaded = readStream(inputStream, output, response);
+
+                    if (mRequest.getUpdateDate() != null)
+                        mediaFile.setLastModified(mRequest.getUpdateDate().getTime());
+
+                    output.flush();
+                    output.close();
+                    Thread.sleep(1000);
+                } catch (IOException ignore) {
+                    ignore.printStackTrace();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (inputStream != null)
+                        inputStream.close();
+                }
+
+                if (isDownloaded) {
+                    Uri fileUri = FileProvider.getUriForFile(mRequest.getContext(), DownloadManager.AUTHORITIES, mediaFile);
+                    showDownloadCompleteNotification(fileUri);
+                    notifyDownloadComplete(fileUri, false);
+                }
+
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -67,161 +123,117 @@ public class DownloadTask implements Runnable {
         }
 
         builder.setSmallIcon(R.drawable.ic_launcher);
-
         return builder;
-    }
-
-    private void createPushNotification() {
-        NotificationCompat.Builder builder = createBuilder();
-        builder.setContentTitle("Download " + mRequest.getFileName())
-                .setContentText("Aguarde enquanto realizamos o download do seu arquivo, quando terminar você será notificado!");
-
-        notificationManager.notify(notificationId, builder.build());
-    }
-
-    private void saveFile(byte[] file) {
     }
 
     private NotificationChannel createChannel() {
         NotificationChannel result = null;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            result = new NotificationChannel("notify_001", "Channel human readable title", NotificationManager.IMPORTANCE_DEFAULT);
+            result = new NotificationChannel("spacebox_channel", "Channel Spacebox", NotificationManager.IMPORTANCE_DEFAULT);
             notificationManager.createNotificationChannel(result);
         }
         return result;
     }
 
-    public Uri downloadFile() {
-        Uri result = null;
-        boolean isDownloaded = false;
-        NotificationCompat.Builder builder = createBuilder();
-
-        builder.setContentTitle("Baixando " + mRequest.getFileName());
-        Request.Builder requestBuilder = new Request.Builder().url(mRequest.getUri())
+    private Request buildRequest() {
+        Request.Builder requestBuilder = new Request.Builder()
+                .url(mRequest.getUri())
                 .addHeader("Content-Type", "application/json");
 
-        if (mRequest.getAuthorization() != null) {
+        if (mRequest.getAuthorization() != null)
             requestBuilder.addHeader("Authorization", mRequest.getAuthorization());
+
+        return requestBuilder.build();
+    }
+
+    private File createFile() throws IOException {
+        File mediaFile = new File(mRequest.getContext().getFilesDir() + "/" + mRequest.getMimeTypeNormalized(), mRequest.getFileName());
+
+        if (!mediaFile.exists()) {
+            mediaFile.getParentFile().mkdirs();
+            mediaFile.createNewFile();
         }
 
-        Request request = requestBuilder.build();
+        return mediaFile;
+    }
 
-        OkHttpClient client = new OkHttpClient();
-        Call call = client.newCall(request);
+    private boolean readStream(InputStream inputStream, OutputStream output, Response response) throws IOException {
+        long downloaded = 0;
+        byte[] buff = new byte[1024 * 4];
+        long target = response.body().contentLength();
 
-        try {
-            Response response = call.execute();
-            if (response.code() == 200 || response.code() == 201) {
+        while (true) {
+            int readed = inputStream.read(buff);
+            if (readed == -1)
+                break;
 
-                InputStream inputStream = null;
-                File mediaFile = null;
-                try {
-                    inputStream = response.body().byteStream();
+            output.write(buff, 0, readed);
+            downloaded += readed;
 
-                    byte[] buff = new byte[1024 * 4];
-                    long downloaded = 0;
-                    long target = response.body().contentLength();
-                    mediaFile = new File(mRequest.getContext().getFilesDir() + "/" + mRequest.getMimeTypeNormalized(), mRequest.getFileName());
+            int percent = (int) ((downloaded * 100) / target);
 
-                    if (!mediaFile.exists()) {
-                        mediaFile.getParentFile().mkdirs();
-                        try {
-                            mediaFile.createNewFile();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    OutputStream output = new FileOutputStream(mediaFile);
-
-                    if (mRequest.getEnableNotification()) {
-                        builder.setProgress(100, 0, false);
-                    }
-
-                    if (mRequest.getOnBeforeDownload() != null) {
-                        Message message = new Message();
-                        Bundle b = new Bundle();
-                        b.putInt("progress", 0);
-                        message.setData(b);
-                        mRequest.getOnBeforeDownload().sendMessage(message);
-                    }
-
-                    if (mRequest.getEnableNotification()) {
-                        notificationManager.notify(notificationId, builder.build());
-                    }
-                    while (true) {
-                        int readed = inputStream.read(buff);
-
-                        if (readed == -1) {
-                            break;
-                        }
-                        output.write(buff, 0, readed);
-                        //write buff
-                        downloaded += readed;
-                        int percent = (int) ((downloaded * 100) / target);
-                        if (mRequest.getEnableNotification()) {
-                            builder.setProgress(100, percent, false);
-                            notificationManager.notify(notificationId, builder.build());
-                        }
-                        if (mRequest.getOnProgressDownload() != null) {
-                            Message message = new Message();
-                            Bundle b = new Bundle();
-                            b.putLong("downloaded", downloaded);
-                            b.putLong("target", target);
-                            b.putInt("progress", percent);
-                            message.setData(b);
-                            mRequest.getOnProgressDownload().sendMessage(message);
-                        }
-                    }
-
-                    if (mRequest.getUpdateDate() != null) {
-                        mediaFile.setLastModified(mRequest.getUpdateDate().getTime());
-                    }
-
-                    output.flush();
-                    output.close();
-
-                    isDownloaded = downloaded == target;
-                    Thread.sleep(1000);
-                } catch (IOException ignore) {
-                    ignore.printStackTrace();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (inputStream != null) {
-                        inputStream.close();
-                    }
-                }
-
-                if (isDownloaded) {
-                    result = FileProvider.getUriForFile(mRequest.getContext(), DownloadManager.AUTHORITIES, mediaFile);
-
-                    if (mRequest.getEnableNotification()) {
-                        Intent shareIntent = new Intent();
-                        shareIntent.setAction(Intent.ACTION_VIEW);
-                        shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        shareIntent.setDataAndType(result, mRequest.getMimeType());
-                        builder.setContentIntent(PendingIntent.getActivity(mRequest.getContext(), 0, shareIntent, PendingIntent.FLAG_CANCEL_CURRENT));
-                        builder.setContentTitle("Baixado " + mRequest.getFileName());
-                        builder.setProgress(0, 0, false);
-                        Log.i("DownloadManager", "NotificationId " + notificationId);
-                        notificationManager.notify(notificationId, builder.build());
-                    }
-                    if (mRequest.getOnCompleteDownload() != null) {
-                        Bundle b = new Bundle();
-                        b.putSerializable("request", mRequest);
-
-                        Message message = Message.obtain();
-                        message.obj = result;
-                        message.setData(b);
-                        mRequest.getOnCompleteDownload().sendMessage(message);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            showDownloadProgressNotification(percent);
+            notifyProgressDownload(percent);
         }
 
-        return result;
+        return downloaded == target;
+    }
+
+    private void showInitialNotification() {
+        if (mRequest.getEnableNotification()) {
+            builder = createBuilder()
+                    .setContentTitle(String.format(ResourceMessages.NOTIFICATION_TITLE, mRequest.getFileName()))
+                    .setContentText(ResourceMessages.NOTIFICATION_WAIT_DOWNLOAD_COMPLETE);
+
+            notificationManager.notify(notificationId, builder.build());
+        }
+    }
+
+    private void showDownloadStartNotification() {
+        if (mRequest.getEnableNotification()) {
+            builder.setContentTitle(String.format(ResourceMessages.NOTIFICATION_DOWNLOADING_TITLE, mRequest.getFileName()));
+            builder.setProgress(100, 0, false);
+            notificationManager.notify(notificationId, builder.build());
+        }
+    }
+
+    private void showDownloadProgressNotification(int percent) {
+        if (mRequest.getEnableNotification()) {
+            builder.setProgress(100, percent, false);
+            notificationManager.notify(notificationId, builder.build());
+        }
+    }
+
+    private void showDownloadCompleteNotification(Uri fileUri) {
+        if (mRequest.getEnableNotification()) {
+            Intent shareIntent = new Intent();
+            shareIntent.setAction(Intent.ACTION_VIEW);
+            shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            shareIntent.setDataAndType(fileUri, mRequest.getMimeType());
+
+            builder.setContentIntent(PendingIntent.getActivity(mRequest.getContext(), 0, shareIntent, PendingIntent.FLAG_CANCEL_CURRENT));
+            builder.setContentTitle(String.format(ResourceMessages.NOTIFICATION_DOWNLOADED_TITLE, mRequest.getFileName()));
+            builder.setProgress(0, 0, false);
+            notificationManager.notify(notificationId, builder.build());
+        }
+    }
+
+    private void notifyProgressDownload(int percent) {
+        if (mRequest.getOnProgressDownload() != null) {
+            DownloadManagerMessage message = new DownloadManagerMessage();
+            message.setProgress(percent);
+            Utils.executeAction(message, mRequest.getOnProgressDownload());
+        }
+    }
+
+    private void notifyDownloadComplete(Uri fileUri, boolean isFromCache) {
+        if (mRequest.getOnCompleteDownload() != null) {
+            DownloadManagerMessage message = new DownloadManagerMessage();
+            message.setFile(fileUri);
+            message.setComplete(true);
+            message.setFromCache(isFromCache);
+            message.setMimeType(mRequest.getMimeType());
+            Utils.executeAction(message, mRequest.getOnCompleteDownload());
+        }
     }
 }
