@@ -1,7 +1,9 @@
-package br.com.download_manager.model;
+package br.com.download_manager.observers;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import br.com.download_manager.model.DownloadManagerMessage;
 
 public class NotificationSubject implements Subject {
     private List<Observer> observers;

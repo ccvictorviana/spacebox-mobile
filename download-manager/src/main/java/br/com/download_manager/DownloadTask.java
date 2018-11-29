@@ -1,13 +1,6 @@
 package br.com.download_manager;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
 import android.net.Uri;
-import android.os.Build;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.FileProvider;
 
 import java.io.File;
@@ -20,8 +13,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import br.com.download_manager.interfaces.IDownloadTask;
 import br.com.download_manager.model.DownloadManagerMessage;
 import br.com.download_manager.model.DownloadManagerRequest;
-import br.com.download_manager.model.NotificationSubject;
-import br.com.download_manager.utils.ResourceMessages;
+import br.com.download_manager.observers.ENotificationObserverType;
+import br.com.download_manager.observers.NotificationObserverFactory;
+import br.com.download_manager.observers.NotificationSubject;
 import br.com.download_manager.utils.Utils;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -30,73 +24,52 @@ import okhttp3.Response;
 public class DownloadTask implements IDownloadTask {
     private int notificationId;
     private DownloadManagerRequest mRequest;
-    private NotificationCompat.Builder builder;
-    private NotificationManager notificationManager;
+    private DownloadManagerMessage message = new DownloadManagerMessage();
     private final static AtomicInteger c = new AtomicInteger(0);
-    private final static String NOTIFICATION_CHANNEL_ID = "spacebox_channel";
-    private final static String NOTIFICATION_CHANNEL_NAME = "Channel Notification of Spacebox.";
-
-    private NotificationSubject notiSubjectBefore = new NotificationSubject();
+    private NotificationSubject notiSubjectCreate = new NotificationSubject();
     private NotificationSubject notiSubjectProgress = new NotificationSubject();
     private NotificationSubject notiSubjectComplete = new NotificationSubject();
 
     public DownloadTask(DownloadManagerRequest request) {
         mRequest = request;
-        notificationId = c.incrementAndGet();
-        notificationManager = (NotificationManager) request.getContext().getSystemService(Context.NOTIFICATION_SERVICE);
-
-        registerNotificationSubjectBefore();
+        registerNotificationSubjectCreate();
         registerNotificationSubjectProgress();
         registerNotificationSubjectComplete();
+
+        if (request.getEnableNotification()) {
+            notificationId = c.incrementAndGet();
+            message.setNotificationId(notificationId);
+        }
     }
 
-    private void registerNotificationSubjectBefore() {
-        notiSubjectBefore.register((message) -> {
-            Utils.executeAction(message, mRequest.getOnBeforeDownload());
-        });
-        notiSubjectBefore.register((message) -> {
-            if (mRequest.getEnableNotification()) {
-                builder = createBuilder()
-                        .setProgress(100, message.getProgress(), false)
-                        .setContentText(ResourceMessages.NOTIFICATION_WAIT_DOWNLOAD_COMPLETE)
-                        .setContentTitle(String.format(ResourceMessages.NOTIFICATION_DOWNLOADING_TITLE, mRequest.getFileName()));
+    private void registerNotificationSubjectCreate() {
+        notiSubjectCreate.register((message) -> Utils.executeAction(message, mRequest.getOnBeforeDownload()));
 
-                notificationManager.notify(notificationId, builder.build());
-            }
-        });
+        if (mRequest.getEnableNotification()) {
+            notiSubjectCreate.register(NotificationObserverFactory
+                    .getNotificationObserver(
+                            ENotificationObserverType.NotificationCreateObserver, mRequest.getContext()));
+        }
     }
 
     private void registerNotificationSubjectProgress() {
-        notiSubjectProgress.register((message) -> {
-            Utils.executeAction(message, mRequest.getOnProgressDownload());
-        });
+        notiSubjectProgress.register((message) -> Utils.executeAction(message, mRequest.getOnProgressDownload()));
 
-        notiSubjectProgress.register((message) -> {
-            if (mRequest.getEnableNotification()) {
-                builder.setProgress(100, message.getProgress(), false);
-                notificationManager.notify(notificationId, builder.build());
-            }
-        });
+        if (mRequest.getEnableNotification()) {
+            notiSubjectProgress.register(NotificationObserverFactory
+                    .getNotificationObserver(
+                            ENotificationObserverType.NotificationProgressObserver, mRequest.getContext()));
+        }
     }
 
     private void registerNotificationSubjectComplete() {
-        notiSubjectComplete.register((message) -> {
-            Utils.executeAction(message, mRequest.getOnCompleteDownload());
-        });
-        notiSubjectComplete.register((message) -> {
-            if (mRequest.getEnableNotification() && !message.isFromCache()) {
-                Intent shareIntent = new Intent();
-                shareIntent.setAction(Intent.ACTION_VIEW);
-                shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                shareIntent.setDataAndType(message.getFile(), mRequest.getMimeType());
+        notiSubjectComplete.register((message) -> Utils.executeAction(message, mRequest.getOnCompleteDownload()));
 
-                builder.setContentIntent(PendingIntent.getActivity(mRequest.getContext(), 0, shareIntent, PendingIntent.FLAG_CANCEL_CURRENT));
-                builder.setContentText(null);
-                builder.setContentTitle(String.format(ResourceMessages.NOTIFICATION_DOWNLOADED_TITLE, mRequest.getFileName()));
-                builder.setProgress(0, 0, false);
-                notificationManager.notify(notificationId, builder.build());
-            }
-        });
+        if (mRequest.getEnableNotification()) {
+            notiSubjectComplete.register(NotificationObserverFactory
+                    .getNotificationObserver(
+                            ENotificationObserverType.NotificationCompleteObserver, mRequest.getContext()));
+        }
     }
 
     @Override
@@ -104,17 +77,15 @@ public class DownloadTask implements IDownloadTask {
         try {
             Uri fileUri = DownloadManager.getInstance().getFileUriCached(mRequest);
 
-            if (fileUri == null)
+            if (fileUri == null) {
                 downloadFile();
-            else if (mRequest.getOnCompleteDownload() != null) {
-                DownloadManagerMessage message = new DownloadManagerMessage();
+            } else if (mRequest.getOnCompleteDownload() != null) {
                 message.setFile(fileUri);
                 message.setComplete(true);
                 message.setFromCache(true);
                 message.setMimeType(mRequest.getMimeType());
                 notiSubjectComplete.notifyObservers(message);
             }
-
         } finally {
             DownloadManager.getInstance().endedThread();
         }
@@ -123,9 +94,9 @@ public class DownloadTask implements IDownloadTask {
     public void downloadFile() {
         Request request = buildRequest();
         OkHttpClient client = new OkHttpClient();
-        DownloadManagerMessage message = new DownloadManagerMessage();
+
         message.setProgress(0);
-        notiSubjectBefore.notifyObservers(message);
+        notiSubjectCreate.notifyObservers(message);
 
         try {
             boolean isDownloaded = false;
@@ -172,29 +143,6 @@ public class DownloadTask implements IDownloadTask {
         }
     }
 
-    private NotificationCompat.Builder createBuilder() {
-        NotificationChannel channel = createChannel();
-        NotificationCompat.Builder builder = null;
-
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            builder = new NotificationCompat.Builder(mRequest.getContext(), (channel != null) ? channel.getId() : null);
-        } else {
-            builder = new NotificationCompat.Builder(mRequest.getContext());
-        }
-
-        builder.setSmallIcon(R.drawable.ic_launcher);
-        return builder;
-    }
-
-    private NotificationChannel createChannel() {
-        NotificationChannel result = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            result = new NotificationChannel(NOTIFICATION_CHANNEL_ID, NOTIFICATION_CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
-            notificationManager.createNotificationChannel(result);
-        }
-        return result;
-    }
-
     private Request buildRequest() {
         Request.Builder requestBuilder = new Request.Builder()
                 .url(mRequest.getUri())
@@ -218,7 +166,6 @@ public class DownloadTask implements IDownloadTask {
     }
 
     private boolean readStream(InputStream inputStream, OutputStream output, Response response) throws IOException {
-        DownloadManagerMessage message = new DownloadManagerMessage();
         long downloaded = 0;
         byte[] buff = new byte[1024 * 4];
         long target = response.body().contentLength();

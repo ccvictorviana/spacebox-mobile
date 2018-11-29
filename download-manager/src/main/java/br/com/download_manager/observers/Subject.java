@@ -1,4 +1,6 @@
-package br.com.download_manager.model;
+package br.com.download_manager.observers;
+
+import br.com.download_manager.model.DownloadManagerMessage;
 
 public interface Subject {
 

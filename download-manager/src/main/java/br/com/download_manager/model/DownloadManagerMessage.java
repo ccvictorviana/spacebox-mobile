@@ -1,15 +1,19 @@
 package br.com.download_manager.model;
 
+import android.content.Context;
 import android.net.Uri;
 
 import java.io.Serializable;
 
 public class DownloadManagerMessage implements Serializable {
     private Uri file;
+    private String fileName;
     private String mimeType;
+    private Context context;
     private Integer progress;
     private boolean complete;
     private boolean fromCache;
+    private int notificationId;
 
     public boolean isFromCache() {
         return fromCache;
@@ -49,5 +53,29 @@ public class DownloadManagerMessage implements Serializable {
 
     public void setFile(Uri file) {
         this.file = file;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public Context getContext() {
+        return context;
+    }
+
+    public void setContext(Context context) {
+        this.context = context;
+    }
+
+    public int getNotificationId() {
+        return notificationId;
+    }
+
+    public void setNotificationId(int notificationId) {
+        this.notificationId = notificationId;
     }
 }
