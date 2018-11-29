@@ -7,7 +7,6 @@ import java.util.Date;
 
 import br.com.spacebox.api.model.request.UserRequest;
 import br.com.spacebox.api.model.response.UserResponse;
-import br.com.spacebox.utils.observer.IObservableEntity;
 import br.com.spacebox.utils.observer.Observer;
 
 public class SessionManager implements Observer<UserRequest> {

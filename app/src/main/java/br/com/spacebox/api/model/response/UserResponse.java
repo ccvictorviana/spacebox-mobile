@@ -1,7 +1,5 @@
 package br.com.spacebox.api.model.response;
 
-import br.com.spacebox.utils.observer.IObservableEntity;
-
 public class UserResponse {
     private Long id;
     private String username;

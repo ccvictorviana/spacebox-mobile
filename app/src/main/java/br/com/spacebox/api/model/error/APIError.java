@@ -1,6 +1,5 @@
 package br.com.spacebox.api.model.error;
 
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 

@@ -3,8 +3,6 @@ package br.com.spacebox.utils;
 
 import android.util.Base64;
 
-import br.com.spacebox.R;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -12,6 +10,8 @@ import java.io.InputStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import br.com.spacebox.R;
 
 public class Util {
     private static final long K = 1024;

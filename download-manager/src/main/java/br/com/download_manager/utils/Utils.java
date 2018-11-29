@@ -20,12 +20,14 @@ public class Utils {
     }
 
     public static void executeAction(DownloadManagerMessage message, IDownloadManagerAction action) {
-        new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(Message msg) {
-                action.execute(message);
-            }
-        }.sendMessage(Message.obtain());
+        if (action != null) {
+            new Handler(Looper.getMainLooper()) {
+                @Override
+                public void handleMessage(Message msg) {
+                    action.execute(message);
+                }
+            }.sendMessage(Message.obtain());
+        }
     }
 }
 

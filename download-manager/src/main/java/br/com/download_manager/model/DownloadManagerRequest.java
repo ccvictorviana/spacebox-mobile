@@ -5,8 +5,8 @@ import android.content.Context;
 import java.io.Serializable;
 import java.util.Date;
 
-import br.com.download_manager.utils.Utils;
 import br.com.download_manager.interfaces.IDownloadManagerAction;
+import br.com.download_manager.utils.Utils;
 
 public class DownloadManagerRequest implements Serializable {
     private String id;

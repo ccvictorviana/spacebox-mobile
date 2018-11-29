@@ -22,8 +22,9 @@ import java.util.Map;
 
 import br.com.download_manager.DownloadManager;
 import br.com.download_manager.interfaces.IDownloadManagerAction;
-import br.com.download_manager.model.DownloadManagerRequest;
 import br.com.download_manager.model.DownloadManagerMessage;
+import br.com.download_manager.model.DownloadManagerRequest;
+import br.com.filepicker_manager.Constant;
 import br.com.filepicker_manager.filter.entity.BaseFile;
 import br.com.filepicker_manager.ui.AudioPickActivity;
 import br.com.filepicker_manager.ui.ImagePickActivity;
@@ -34,7 +35,6 @@ import br.com.spacebox.api.model.request.FileFilterRequest;
 import br.com.spacebox.api.model.request.FileRequest;
 import br.com.spacebox.api.model.response.FileSummaryResponse;
 import br.com.spacebox.api.model.response.FilesResponse;
-import br.com.filepicker_manager.Constant;
 import br.com.spacebox.ui.base.BaseFragment;
 import br.com.spacebox.utils.Util;
 
@@ -357,38 +357,30 @@ public class DashboardFragment extends BaseFragment {
         shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         shareIntent.setDataAndType(response.getFile(), response.getMimeType());
         startActivity(shareIntent);
-
-//        MimeTypeMap myMime = MimeTypeMap.getSingleton();
-//        Intent newIntent = new Intent(Intent.ACTION_VIEW);
-////        String mimeType = myMime.getMimeTypeFromExtension(fileExt(getFile()).substring(1));
-//        newIntent.setDataAndType(, request.getMimeType());
-//        newIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-//        try {
-//            getContext().startActivity(newIntent);
-//        } catch (ActivityNotFoundException e) {
-//            Toast.makeText(getContext(), "No handler for this type of file.", Toast.LENGTH_LONG).show();
-//        }
     }
 
     private void download(FileSummaryResponse file, View view) {
-        IDownloadManagerAction onBeforeDownload = (response) -> {
+        IDownloadManagerAction onBeforeDownload = (message) -> {
             ProgressBar progress = view.findViewById(R.id.progressBarDownload);
             progress.setVisibility(View.VISIBLE);
-            progress.setProgress(0);
+            progress.setProgress(message.getProgress());
         };
 
-        IDownloadManagerAction onProgressDownload = (response) -> {
+        IDownloadManagerAction onProgressDownload = (message) -> {
             ProgressBar progress = view.findViewById(R.id.progressBarDownload);
-            progress.setProgress(response.getProgress());
+            progress.setProgress(message.getProgress());
         };
 
-        IDownloadManagerAction onCompleteDownload = (response) -> {
+        IDownloadManagerAction onCompleteDownload = (message) -> {
             ProgressBar progress = view.findViewById(R.id.progressBarDownload);
             progress.setVisibility(View.GONE);
             progress.setProgress(0);
 
             ImageView imageView = view.findViewById(R.id.downloadedIV);
             imageView.setImageResource(R.drawable.downloaded);
+
+            if (message.isFromCache())
+                openFile(message);
         };
 
 //        DownloadManager.Request request = DownloadManager.Request.Builder.create()
