@@ -39,6 +39,7 @@ public class DownloadTask implements IDownloadTask {
         if (request.getEnableNotification()) {
             notificationId = c.incrementAndGet();
             message.setNotificationId(notificationId);
+            message.setFileName(request.getFileName());
         }
     }
 
