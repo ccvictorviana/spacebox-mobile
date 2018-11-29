@@ -18,8 +18,8 @@ public abstract class NotificationObserver implements Observer {
 
     public NotificationObserver(Context context) {
         this.context = context;
-        this.builder = createBuilder();
         this.notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        this.builder = createBuilder();
     }
 
     private NotificationCompat.Builder createBuilder() {
