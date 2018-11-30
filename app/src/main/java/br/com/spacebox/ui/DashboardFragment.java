@@ -384,27 +384,13 @@ public class DashboardFragment extends BaseFragment {
                 openFile(message);
         };
 
-        DownloadManagerRequest request = DownloadManagerRequest.Builder.create()
-                .withUri(SpaceBoxConst.FILE_API_CLIENT_BASE_URL_DOWNLOAD + file.getId())
-                .withAuthorization(sessionManager.getFullToken())
-                .withEnableNotification(true)
-                .withUpdateDate(file.getUpdated())
-                .withFileName(file.getName())
-                .withContext(getContext())
-
-                .withOnBeforeDownload(onBeforeDownload)
-                .withOnProgressDownload(onProgressDownload)
-                .withOnCompleteDownload(onCompleteDownload)
-                .build();
-
-        DownloadManager.getInstance().enqueue(request);
-
-
 //        DownloadManagerRequest request = DownloadManagerRequest.Builder.create()
-//                .withUri("https://blog.kitei.com.br/wp-content/uploads/2018/07/215241-limpar-o-nome-online-como-escolher-o-melhor-site-para-isso.jpg")
+//                .withUri(SpaceBoxConst.FILE_API_CLIENT_BASE_URL_DOWNLOAD + file.getId())
+//                .withAuthorization(sessionManager.getFullToken())
+//                .withEnableNotification(true)
+//                .withUpdateDate(file.getUpdated())
 //                .withFileName(file.getName())
 //                .withContext(getContext())
-//                .withEnableNotification(true)
 //
 //                .withOnBeforeDownload(onBeforeDownload)
 //                .withOnProgressDownload(onProgressDownload)
@@ -412,5 +398,20 @@ public class DashboardFragment extends BaseFragment {
 //                .build();
 //
 //        DownloadManager.getInstance().enqueue(request);
+
+
+        DownloadManagerRequest request = DownloadManagerRequest.Builder.create()
+                .withUri("https://firebasestorage.googleapis.com/v0/b/progavan-892dc.appspot.com/o/images?alt=media&token=87fecfd7-46e3-4fae-90aa-f5e1833736ad")
+                .withFileName(file.getName())
+                .withContext(getContext())
+                .withAddHeaderJSON(false)
+                .withEnableNotification(true)
+
+                .withOnBeforeDownload(onBeforeDownload)
+                .withOnProgressDownload(onProgressDownload)
+                .withOnCompleteDownload(onCompleteDownload)
+                .build();
+
+        DownloadManager.getInstance().enqueue(request);
     }
 }

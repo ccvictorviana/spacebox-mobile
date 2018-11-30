@@ -145,9 +145,10 @@ public class DownloadTask implements IDownloadTask {
     }
 
     private Request buildRequest() {
-        Request.Builder requestBuilder = new Request.Builder()
-                .url(mRequest.getUri())
-                .addHeader("Content-Type", "application/json");
+        Request.Builder requestBuilder = new Request.Builder().url(mRequest.getUri());
+
+        if (mRequest.isAddHeaderJSON())
+            requestBuilder.addHeader("Content-Type", "application/json");
 
         if (mRequest.getAuthorization() != null)
             requestBuilder.addHeader("Authorization", mRequest.getAuthorization());

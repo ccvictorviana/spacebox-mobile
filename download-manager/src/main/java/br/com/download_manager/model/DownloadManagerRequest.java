@@ -13,6 +13,7 @@ public class DownloadManagerRequest implements Serializable {
     private String uri;
     private String fileName;
     private String authorization;
+    private boolean addHeaderJSON;
     private boolean enableNotification;
     private Context context;
     private Date updateDate;
@@ -21,13 +22,14 @@ public class DownloadManagerRequest implements Serializable {
     private IDownloadManagerAction onProgressDownload;
 
     public DownloadManagerRequest(String id, String uri, String fileName, String authorization, Date updateDate,
-                                  boolean enableNotification, Context context, IDownloadManagerAction onBeforeDownload,
+                                  boolean enableNotification, boolean addHeaderJSON, Context context, IDownloadManagerAction onBeforeDownload,
                                   IDownloadManagerAction onProgressDownload, IDownloadManagerAction onCompleteDownload) {
         this.id = id;
         this.uri = uri;
         this.fileName = fileName;
         this.updateDate = updateDate;
         this.authorization = authorization;
+        this.addHeaderJSON = addHeaderJSON;
         this.enableNotification = enableNotification;
         this.context = context;
         this.onBeforeDownload = onBeforeDownload;
@@ -91,6 +93,14 @@ public class DownloadManagerRequest implements Serializable {
         return onCompleteDownload;
     }
 
+    public boolean isAddHeaderJSON() {
+        return addHeaderJSON;
+    }
+
+    public void setAddHeaderJSON(boolean addHeaderJSON) {
+        this.addHeaderJSON = addHeaderJSON;
+    }
+
     public static class Builder {
         private String id;
         private String uri;
@@ -98,6 +108,7 @@ public class DownloadManagerRequest implements Serializable {
         private Context context;
         private String fileName;
         private String authorization;
+        private boolean addHeaderJSON;
         private boolean enableNotification;
         private IDownloadManagerAction onBeforeDownload;
         private IDownloadManagerAction onProgressDownload;
@@ -153,8 +164,13 @@ public class DownloadManagerRequest implements Serializable {
             return this;
         }
 
+        public Builder withAddHeaderJSON(boolean addHeaderJSON) {
+            this.addHeaderJSON = addHeaderJSON;
+            return this;
+        }
+
         public DownloadManagerRequest build() {
-            return new DownloadManagerRequest(id, uri, fileName, authorization, updateDate, enableNotification, context,
+            return new DownloadManagerRequest(id, uri, fileName, authorization, updateDate, enableNotification, addHeaderJSON, context,
                     onBeforeDownload, onProgressDownload, onCompleteDownload);
         }
 
